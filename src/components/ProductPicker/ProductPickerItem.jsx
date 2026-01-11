@@ -30,9 +30,6 @@ const ProductPickerItem = ({
     getVariantSelected(product, variant.id)
   );
 
-  const someVariantsSelected = product.variants.some(variant =>
-    getVariantSelected(product, variant.id)
-  );
 
   return (
     <div className={`product-picker-item ${isAlreadyInList ? 'disabled' : ''}`}>
