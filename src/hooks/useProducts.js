@@ -32,11 +32,10 @@ const useProducts = ({ search = '', page = 0, limit = 10 } = {}) => {
     }
   }, [search, page, limit]);
 
-  useEffect(() => {
-    setProducts([]);
-    setHasMore(true);
-    loadProducts(true);
-  }, [search, limit]);
+useEffect(() => {
+  loadProducts()
+}, [loadProducts])
+
 
   const loadMore = useCallback(async () => {
     if (!hasMore || loading) return false;
