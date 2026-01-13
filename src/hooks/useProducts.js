@@ -4,7 +4,7 @@ import { fetchProducts, testApiConnection } from '../utils/api';
 const useProducts = ({ search = '', page = 0, limit = 10 } = {}) => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+   const [error, setError] = useState(null);
   const [hasMore, setHasMore] = useState(true);
   const [apiStatus, setApiStatus] = useState('checking');
 

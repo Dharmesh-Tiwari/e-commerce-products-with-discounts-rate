@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import useProducts from '../../hooks/useProducts';
 import useDebounce from '../../hooks/useDebounce';
-import { FaSearch, FaTimes, FaCheck, FaExclamationTriangle, FaSync, FaDatabase } from 'react-icons/fa';
+import { FaSearch, FaTimes, FaCheck, FaSync, FaDatabase } from 'react-icons/fa';
 import './ProductPicker.css';
 
 const ProductPicker = ({ isOpen, onClose, onSelect, selectedProducts, editingProductId }) => {
