@@ -10,7 +10,7 @@ const api = axios.create({
     'x-api-key': API_KEY,
     'Content-Type': 'application/json'
   },
-  timeout: 10000 // 10 seconds timeout
+  timeout: 10000 // 10 seconds
 });
 
 // Fallback mock data in case API fails
