@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import useProducts from '../../hooks/useProducts';
 import useDebounce from '../../hooks/useDebounce';
-import { FaSearch, FaTimes, FaCheck, FaSync, FaDatabase } from 'react-icons/fa';
+import { FaSearch, FaTimes, FaCheck, FaExclamationTriangle, FaSync, FaDatabase } from 'react-icons/fa';
 import './ProductPicker.css';
 
 const ProductPicker = ({ isOpen, onClose, onSelect, selectedProducts, editingProductId }) => {
@@ -9,7 +9,8 @@ const ProductPicker = ({ isOpen, onClose, onSelect, selectedProducts, editingPro
   const [selectedItems, setSelectedItems] = useState([]);
   const debouncedSearch = useDebounce(search, 500);
   
-  const { products, loading, error, apiStatus, loadMore, hasMore, refresh } = useProducts({
+  // 'error' variable को remove कर दें या use करें
+  const { products, loading, apiStatus, loadMore, hasMore, refresh } = useProducts({
     search: debouncedSearch,
     page: 0,
     limit: 10
