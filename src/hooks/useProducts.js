@@ -27,31 +27,39 @@ const useProducts = ({ search = '', page = 0, limit = 10 } = {}) => {
       }
     } catch (err) {
       setError(err.message || 'Failed to load products');
+      console.error('Error loading products:', err);
+      // Don't clear products on error, keep showing existing ones
     } finally {
       setLoading(false);
     }
   }, [search, page, limit]);
 
-useEffect(() => {
-  loadProducts()
-}, [loadProducts])
-
+  useEffect(() => {
+    setProducts([]);
+    setHasMore(true);
+    loadProducts(true);
+  }, [search, limit, loadProducts]);
 
   const loadMore = useCallback(async () => {
     if (!hasMore || loading) return false;
     
-    const nextPage = page + 1;
-    const data = await fetchProducts({
-      search,
-      page: nextPage,
-      limit
-    });
-    
-    setProducts(prev => [...prev, ...data]);
-    const hasMoreData = data.length === limit;
-    setHasMore(hasMoreData);
-    
-    return hasMoreData;
+    try {
+      const nextPage = page + 1;
+      const data = await fetchProducts({
+        search,
+        page: nextPage,
+        limit
+      });
+      
+      setProducts(prev => [...prev, ...data]);
+      const hasMoreData = data.length === limit;
+      setHasMore(hasMoreData);
+      
+      return hasMoreData;
+    } catch (err) {
+      console.error('Error loading more products:', err);
+      return false;
+    }
   }, [search, page, limit, hasMore, loading]);
 
   return {
