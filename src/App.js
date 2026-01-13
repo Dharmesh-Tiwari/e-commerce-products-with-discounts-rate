@@ -51,19 +51,25 @@ function App() {
     setEditingProductId(null);
   };
 
-  const handleProductSelect = useCallback((selectedProductsFromPicker) => {
-    if (editingProductId) {
-      // Replace the editing product with selected products
-      const index = selectedProducts.findIndex(p => p.id === editingProductId);
-      const newProducts = [...selectedProducts];
-      newProducts.splice(index, 1, ...selectedProductsFromPicker);
-      setSelectedProducts(newProducts);
-    } else {
-      // Add to end (for future expansion)
-      setSelectedProducts([...selectedProducts, ...selectedProductsFromPicker]);
-    }
-    handlePickerClose();
-  }, [editingProductId, selectedProducts]);
+const handleProductSelect = useCallback((selectedProductsFromPicker) => {
+  if (editingProductId) {
+    
+    const index = selectedProducts.findIndex(p => p.id === editingProductId);
+    const newProducts = [...selectedProducts];
+    
+    // Remove the old product
+    newProducts.splice(index, 1);
+    
+    // Add new products at the same position
+    newProducts.splice(index, 0, ...selectedProductsFromPicker);
+    
+    setSelectedProducts(newProducts);
+  } else {
+    //  (for future expansion)
+    setSelectedProducts([...selectedProducts, ...selectedProductsFromPicker]);
+  }
+  handlePickerClose();
+}, [editingProductId, selectedProducts]);
 
   const handleMoveProduct = useCallback((dragIndex, hoverIndex) => {
     const dragProduct = selectedProducts[dragIndex];
@@ -135,6 +141,7 @@ function App() {
       )
     );
   }, []);
+  
 
   return (
     <DndProvider backend={HTML5Backend}>

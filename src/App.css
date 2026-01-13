@@ -184,3 +184,32 @@ body {
   border-radius: 4px;
   margin: 10px 0;
 }
+
+
+.modal-fix {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999;
+}
+
+/* Ensure modal is above everything */
+.picker-overlay {
+  z-index: 10000 !important;
+}
+
+/* Make sure modal content is visible */
+.picker-modal * {
+  box-sizing: border-box;
+}
+
+/* Fix for modal layout */
+.picker-modal {
+  display: flex !important;
+  flex-direction: column !important;
+  background: white !important;
+  border-radius: 12px !important;
+  overflow: hidden !important;
+}

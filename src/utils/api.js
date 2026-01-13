@@ -1,207 +1,236 @@
 import axios from 'axios';
 
 const API_BASE_URL = 'https://stageapi.monkcommerce.app/task/products';
-const API_KEY = '72njgfa948d9aS7gs5'; // Your API key
+const API_KEY = '72njgfa948d9aS7gs5';
 
+// Create axios instance with API key
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'x-api-key': API_KEY,
     'Content-Type': 'application/json'
-  }
+  },
+  timeout: 10000 // 10 seconds timeout
 });
 
-export const fetchProducts = async ({ search = '', page = 0, limit = 10 }) => {
-  try {
-    const response = await api.get('/search', {
-      params: {
-        search,
-        page,
-        limit
-      }
-    });
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching products:', error);
-    
-    // Fallback to mock data if API fails
-    if (error.response?.status === 401 || error.response?.status === 403) {
-      console.warn('API authentication failed, using mock data');
-      return getMockProducts(search, page, limit);
+// Fallback mock data in case API fails
+const mockProducts = [
+  {
+    id: 1,
+    title: "Sports Shoes - Running",
+    variants: [
+      { id: 101, product_id: 1, title: "Size 8 / Black", price: "79.99" },
+      { id: 102, product_id: 1, title: "Size 9 / Black", price: "79.99" },
+      { id: 103, product_id: 1, title: "Size 10 / Black", price: "79.99" },
+      { id: 104, product_id: 1, title: "Size 8 / White", price: "79.99" },
+      { id: 105, product_id: 1, title: "Size 9 / White", price: "79.99" }
+    ],
+    image: {
+      src: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
+      alt: "Sports Shoes"
     }
-    
-    throw new Error(error.response?.data?.message || 'Failed to fetch products');
-  }
-};
-
-// Mock data for development and fallback
-const getMockProducts = (search = '', page = 0, limit = 10) => {
-  const allMockProducts = [
-    {
-      id: 77,
-      title: "Fog Linen Chambray Towel - Beige Stripe",
-      variants: [
-        { id: 1, product_id: 77, title: "XS / Silver", price: "49" },
-        { id: 2, product_id: 77, title: "S / Silver", price: "49" },
-        { id: 3, product_id: 77, title: "M / Silver", price: "49" },
-        { id: 4, product_id: 77, title: "L / Silver", price: "55" },
-        { id: 5, product_id: 77, title: "XL / Silver", price: "60" }
-      ],
-      image: {
-        id: 266,
-        product_id: 77,
-        src: "https://cdn11.bigcommerce.com/s-p1xcugzp89/products/77/images/266/foglinenbeigestripetowel1b.1647248662.386.513.jpg?c=1"
-      }
-    },
-    {
-      id: 80,
-      title: "Orbit Terrarium - Large",
-      variants: [
-        { id: 64, product_id: 80, title: "Default Title", price: "109" }
-      ],
-      image: {
-        id: 272,
-        product_id: 80,
-        src: "https://cdn11.bigcommerce.com/s-p1xcugzp89/products/80/images/272/roundterrariumlarge.1647248662.386.513.jpg?c=1"
-      }
-    },
-    {
-      id: 81,
-      title: "Classic Leather Sneakers",
-      variants: [
-        { id: 65, product_id: 81, title: "Black / 8", price: "89" },
-        { id: 66, product_id: 81, title: "Black / 9", price: "89" },
-        { id: 67, product_id: 81, title: "White / 8", price: "89" },
-        { id: 68, product_id: 81, title: "White / 9", price: "89" }
-      ],
-      image: {
-        id: 275,
-        product_id: 81,
-        src: "https://images.unsplash.com/photo-1549298916-b41d501d3772?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80"
-      }
-    },
-    {
-      id: 82,
-      title: "Wireless Bluetooth Headphones",
-      variants: [
-        { id: 69, product_id: 82, title: "Black", price: "129" },
-        { id: 70, product_id: 82, title: "White", price: "129" },
-        { id: 71, product_id: 82, title: "Blue", price: "139" }
-      ],
-      image: {
-        id: 278,
-        product_id: 82,
-        src: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80"
-      }
-    },
-    {
-      id: 83,
-      title: "Stainless Steel Water Bottle",
-      variants: [
-        { id: 72, product_id: 83, title: "500ml", price: "29" },
-        { id: 73, product_id: 83, title: "750ml", price: "35" },
-        { id: 74, product_id: 83, title: "1L", price: "45" }
-      ],
-      image: {
-        id: 279,
-        product_id: 83,
-        src: "https://images.unsplash.com/photo-1523362628745-0c100150b504?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80"
-      }
-    },
-    {
-      id: 84,
-      title: "Organic Cotton T-Shirt",
-      variants: [
-        { id: 75, product_id: 84, title: "S / Black", price: "25" },
-        { id: 76, product_id: 84, title: "M / Black", price: "25" },
-        { id: 77, product_id: 84, title: "L / Black", price: "25" },
-        { id: 78, product_id: 84, title: "S / White", price: "25" },
-        { id: 79, product_id: 84, title: "M / White", price: "25" }
-      ],
-      image: {
-        id: 280,
-        product_id: 84,
-        src: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80"
-      }
-    },
-    {
-      id: 85,
-      title: "Ceramic Coffee Mug Set",
-      variants: [
-        { id: 80, product_id: 85, title: "Set of 2", price: "32" },
-        { id: 81, product_id: 85, title: "Set of 4", price: "58" },
-        { id: 82, product_id: 85, title: "Set of 6", price: "85" }
-      ],
-      image: {
-        id: 281,
-        product_id: 85,
-        src: "https://images.unsplash.com/photo-1514228742587-6b1558fcf93a?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80"
-      }
-    },
-    {
-      id: 86,
-      title: "Yoga Mat Premium",
-      variants: [
-        { id: 83, product_id: 86, title: "Purple", price: "45" },
-        { id: 84, product_id: 86, title: "Blue", price: "45" },
-        { id: 85, product_id: 86, title: "Green", price: "45" }
-      ],
-      image: {
-        id: 282,
-        product_id: 86,
-        src: "https://images.unsplash.com/photo-1599901860904-17e6ed7083a0?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80"
-      }
-    },
-    {
-      id: 87,
-      title: "Desk Lamp with Wireless Charger",
-      variants: [
-        { id: 86, product_id: 87, title: "Silver", price: "65" },
-        { id: 87, product_id: 87, title: "Black", price: "65" }
-      ],
-      image: {
-        id: 283,
-        product_id: 87,
-        src: "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80"
-      }
-    },
-    {
-      id: 88,
-      title: "Backpack Waterproof",
-      variants: [
-        { id: 88, product_id: 88, title: "Gray / 20L", price: "75" },
-        { id: 89, product_id: 88, title: "Gray / 30L", price: "85" },
-        { id: 90, product_id: 88, title: "Navy / 20L", price: "75" },
-        { id: 91, product_id: 88, title: "Navy / 30L", price: "85" }
-      ],
-      image: {
-        id: 284,
-        product_id: 88,
-        src: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80"
-      }
+  },
+  {
+    id: 2,
+    title: "Wireless Headphones",
+    variants: [
+      { id: 201, product_id: 2, title: "Black", price: "129.99" },
+      { id: 202, product_id: 2, title: "White", price: "129.99" },
+      { id: 203, product_id: 2, title: "Blue", price: "139.99" }
+    ],
+    image: {
+      src: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
+      alt: "Wireless Headphones"
     }
-  ];
-
-  // Filter by search if provided
-  let filteredProducts = allMockProducts;
-  if (search.trim()) {
-    const searchLower = search.toLowerCase();
-    filteredProducts = allMockProducts.filter(product => 
-      product.title.toLowerCase().includes(searchLower)
-    );
+  },
+  {
+    id: 3,
+    title: "Leather Jacket",
+    variants: [
+      { id: 301, product_id: 3, title: "Small / Black", price: "199.99" },
+      { id: 302, product_id: 3, title: "Medium / Black", price: "199.99" },
+      { id: 303, product_id: 3, title: "Large / Black", price: "199.99" },
+      { id: 304, product_id: 3, title: "Small / Brown", price: "189.99" }
+    ],
+    image: {
+      src: "https://images.unsplash.com/photo-1551028719-00167b16eac5?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
+      alt: "Leather Jacket"
+    }
+  },
+  {
+    id: 4,
+    title: "Smart Watch Series 5",
+    variants: [
+      { id: 401, product_id: 4, title: "44mm / Black", price: "299.99" },
+      { id: 402, product_id: 4, title: "44mm / Silver", price: "299.99" },
+      { id: 403, product_id: 4, title: "40mm / Black", price: "279.99" }
+    ],
+    image: {
+      src: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
+      alt: "Smart Watch"
+    }
+  },
+  {
+    id: 5,
+    title: "Backpack - Waterproof",
+    variants: [
+      { id: 501, product_id: 5, title: "30L / Gray", price: "89.99" },
+      { id: 502, product_id: 5, title: "30L / Navy", price: "89.99" },
+      { id: 503, product_id: 5, title: "40L / Gray", price: "99.99" }
+    ],
+    image: {
+      src: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
+      alt: "Backpack"
+    }
   }
+];
 
-  // Implement pagination
-  const start = page * limit;
-  const end = start + limit;
-  const paginatedProducts = filteredProducts.slice(start, end);
-
-  // Simulate API delay
+// Helper function for mock data fallback
+const getMockProducts = ({ search = '', page = 0, limit = 10 }) => {
+  // Simulate network delay
   return new Promise(resolve => {
     setTimeout(() => {
+      // Filter by search term
+      let filteredProducts = mockProducts;
+      if (search.trim()) {
+        const searchLower = search.toLowerCase();
+        filteredProducts = mockProducts.filter(product =>
+          product.title.toLowerCase().includes(searchLower)
+        );
+      }
+      
+      // Implement pagination
+      const start = page * limit;
+      const end = start + limit;
+      const paginatedProducts = filteredProducts.slice(start, end);
+      
       resolve(paginatedProducts);
-    }, 300);
+    }, 500);
   });
 };
 
-export { getMockProducts };
+// Main API function
+export const fetchProducts = async ({ search = '', page = 0, limit = 10 }) => {
+  try {
+    console.log(' API Call:', { search, page, limit });
+    
+    const response = await api.get('/search', {
+      params: {
+        search: search || '',
+        page: page,
+        limit: limit
+      }
+    });
+    
+    console.log(' API Response Status:', response.status);
+    console.log(' API Response Data:', response.data);
+    
+    if (!response.data) {
+      throw new Error('No data received from API');
+    }
+    
+    // Format the data properly
+    const formattedData = response.data.map(product => ({
+      id: product.id,
+      title: product.title || 'Untitled Product',
+      variants: product.variants?.map(variant => ({
+        id: variant.id,
+        product_id: variant.product_id,
+        title: variant.title || 'Default Variant',
+        price: variant.price || '0.00'
+      })) || [{ id: Date.now(), product_id: product.id, title: 'Default', price: '0.00' }],
+      image: product.image || {
+        src: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+        alt: 'Product Image'
+      }
+    }));
+    
+    return formattedData;
+    
+  } catch (error) {
+    console.error(' API Error Details:', {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status,
+      headers: error.response?.headers
+    });
+    
+    // Check for specific errors
+    if (error.response?.status === 401 || error.response?.status === 403) {
+      console.warn('API Authentication failed, using mock data');
+      return await getMockProducts({ search, page, limit });
+    } else if (error.response?.status === 404) {
+      console.warn(' API endpoint not found, using mock data');
+      return await getMockProducts({ search, page, limit });
+    } else if (error.code === 'ECONNABORTED') {
+      console.warn(' Request timeout, using mock data');
+      return await getMockProducts({ search, page, limit });
+    } else if (!navigator.onLine) {
+      console.warn(' No internet connection, using mock data');
+      return await getMockProducts({ search, page, limit });
+    } else {
+      console.warn(' API failed, using mock data:', error.message);
+      return await getMockProducts({ search, page, limit });
+    }
+  }
+};
+
+// Test API connection
+export const testApiConnection = async () => {
+  try {
+    console.log('🔄 Testing API connection...');
+    const response = await api.get('/search', {
+      params: { search: '', page: 0, limit: 1 }
+    });
+    
+    console.log('✅ API Test Success:', response.status);
+    return {
+      success: true,
+      status: response.status,
+      data: response.data,
+      message: 'API connected successfully'
+    };
+  } catch (error) {
+    console.error('❌ API Test Failed:', error.message);
+    return {
+      success: false,
+      error: error.message,
+      status: error.response?.status,
+      message: `API connection failed: ${error.message}`
+    };
+  }
+};
+
+// Direct API test function (for debugging)
+export const directApiTest = async () => {
+  console.log('🔍 Direct API Test...');
+  
+  try {
+    // Method 1: Using fetch
+    const fetchResponse = await fetch('https://stageapi.monkcommerce.app/task/products/search?search=Hat&page=0&limit=2', {
+      headers: {
+        'x-api-key': API_KEY
+      }
+    });
+    
+    console.log('Fetch Status:', fetchResponse.status);
+    const fetchData = await fetchResponse.json();
+    console.log('Fetch Data:', fetchData);
+    
+    // Method 2: Using axios
+    const axiosResponse = await api.get('/search', {
+      params: { search: 'Hat', page: 0, limit: 2 }
+    });
+    
+    console.log('Axios Status:', axiosResponse.status);
+    console.log('Axios Data:', axiosResponse.data);
+    
+    return {
+      fetch: { status: fetchResponse.status, data: fetchData },
+      axios: { status: axiosResponse.status, data: axiosResponse.data }
+    };
+  } catch (err) {
+    console.error('Direct API Test Error:', err);
+    throw err;
+  }
+};
