@@ -1,220 +1,243 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import ProductPickerItem from './ProductPickerItem';
-import useProducts from '../../hooks/useProducts';
-import useDebounce from '../../hooks/useDebounce';
-import { FaSearch, FaTimes, FaCheck, FaExclamationTriangle } from 'react-icons/fa';
+import React, { useState } from 'react';
+import { FaChevronDown, FaChevronUp, FaCheck, FaSquare, FaCheckSquare } from 'react-icons/fa';
 import './ProductPicker.css';
 
-const ProductPicker = ({ isOpen, onClose, onSelect, selectedProducts, editingProductId }) => {
-  const [search, setSearch] = useState('');
-  const [selectedItems, setSelectedItems] = useState([]);
-  const [page, setPage] = useState(0);
-  const [hasMore, setHasMore] = useState(true);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const debouncedSearch = useDebounce(search, 500);
+const ProductPickerItem = ({
+  product,
+  isSelected,
+  isAlreadyInList,
+  onSelect,
+  getVariantSelected
+}) => {
+  const [showVariants, setShowVariants] = useState(false);
+  const hasMultipleVariants = product.variants && product.variants.length > 1;
+  const isSingleVariant = product.variants && product.variants.length === 1;
+  const noVariants = !product.variants || product.variants.length === 0;
+
+  // Calculate selected variants
+  const selectedVariants = product.variants?.filter(variant =>
+    getVariantSelected(product.id, variant.id)
+  ) || [];
   
-  const { products, loading, error, loadMore } = useProducts({
-    search: debouncedSearch,
-    page
-  });
+  const selectedVariantsCount = selectedVariants.length;
+  const allVariantsSelected = selectedVariantsCount === product.variants?.length;
+  const someVariantsSelected = selectedVariantsCount > 0 && !allVariantsSelected;
 
-  const containerRef = useRef(null);
-
-  useEffect(() => {
-    if (!isOpen) {
-      setSelectedItems([]);
-      setSearch('');
-      setPage(0);
-    }
-  }, [isOpen]);
-
-  const handleScroll = useCallback(() => {
-    if (!containerRef.current || loading || isLoadingMore || !hasMore) return;
-
-    const { scrollTop, scrollHeight, clientHeight } = containerRef.current;
-    if (scrollTop + clientHeight >= scrollHeight - 100) {
-      setIsLoadingMore(true);
-      loadMore().then((hasMoreData) => {
-        setHasMore(hasMoreData);
-        setPage(prev => prev + 1);
-        setIsLoadingMore(false);
-      }).catch(() => {
-        setIsLoadingMore(false);
-      });
-    }
-  }, [loading, isLoadingMore, hasMore, loadMore]);
-
-  useEffect(() => {
-    const container = containerRef.current;
-    if (container) {
-      container.addEventListener('scroll', handleScroll);
-      return () => container.removeEventListener('scroll', handleScroll);
-    }
-  }, [handleScroll]);
-
-  const handleSelectProduct = (product, variantId = null) => {
-    setSelectedItems(prev => {
-      const existingIndex = prev.findIndex(item => 
-        item.product.id === product.id && item.variantId === variantId
-      );
-      
-      if (existingIndex >= 0) {
-        return prev.filter((_, index) => index !== existingIndex);
-      } else {
-        return [...prev, { product, variantId }];
-      }
-    });
-  };
-
-  const isProductSelected = (product, variantId = null) => {
-    return selectedItems.some(item => 
-      item.product.id === product.id && item.variantId === variantId
-    );
-  };
-
-  const isProductAlreadyInList = (productId) => {
-    if (editingProductId) {
-      // When editing, exclude the product being replaced
-      return selectedProducts
-        .filter(p => p.id !== editingProductId)
-        .some(p => p.id === productId);
-    }
-    return selectedProducts.some(p => p.id === productId);
-  };
-
-  const handleConfirmSelection = () => {
-    const newProducts = selectedItems.map(({ product, variantId }) => {
-      if (variantId) {
-        // Create a new product with only the selected variant
-        const variant = product.variants.find(v => v.id === variantId);
-        return {
-          ...product,
-          variants: [variant],
-          showVariants: false
-        };
-      } else {
-        // Use all variants
-        return {
-          ...product,
-          variants: product.variants.map(v => ({
-            ...v,
-            discount: { type: 'none', value: 0 }
-          })),
-          showVariants: product.variants.length > 1
-        };
-      }
-    });
+  // Handle product header click
+  const handleProductClick = () => {
+    if (isAlreadyInList) return;
     
-    onSelect(newProducts);
+    if (hasMultipleVariants && !showVariants) {
+      setShowVariants(true);
+    } else if (isSingleVariant) {
+      const variant = product.variants[0];
+      onSelect(product, variant.id);
+    }
   };
 
-  if (!isOpen) return null;
+  // Handle variant selection
+  const handleVariantSelect = (variantId) => {
+    onSelect(product, variantId);
+  };
+
+  // Handle select all variants
+  const handleSelectAll = () => {
+    product.variants.forEach(variant => {
+      const isSelected = getVariantSelected(product.id, variant.id);
+      if (allVariantsSelected || (!allVariantsSelected && !isSelected)) {
+        handleVariantSelect(variant.id);
+      }
+    });
+  };
+
+  // Get price range for multiple variants
+  const getPriceRange = () => {
+    if (!product.variants || product.variants.length === 0) return null;
+    
+    const prices = product.variants.map(v => parseFloat(v.price) || 0);
+    const minPrice = Math.min(...prices);
+    const maxPrice = Math.max(...prices);
+    
+    if (minPrice === maxPrice) {
+      return `$${minPrice.toFixed(2)}`;
+    }
+    return `$${minPrice.toFixed(2)} - $${maxPrice.toFixed(2)}`;
+  };
 
   return (
-    <div className="picker-overlay">
-      <div className="picker-modal">
-        <div className="picker-header">
-          <h2>Select Products</h2>
-          <div className="api-status">
-            {error && (
-              <span className="api-warning">
-                <FaExclamationTriangle /> Using demo data
+    <div className={`product-picker-item ${isAlreadyInList ? 'disabled' : ''}`}>
+      {/* Product Header */}
+      <div 
+        className="picker-item-header" 
+        onClick={handleProductClick}
+        style={{ cursor: isAlreadyInList ? 'not-allowed' : 'pointer' }}
+      >
+        <div className="picker-item-image">
+          <img 
+            src={product.image?.src || 'https://via.placeholder.com/80'} 
+            alt={product.title || 'Product'} 
+            onError={(e) => {
+              e.target.src = 'https://via.placeholder.com/80';
+            }}
+          />
+          
+          {!isAlreadyInList && (allVariantsSelected || (isSingleVariant && isSelected)) && (
+            <div className="selection-indicator full">
+              <FaCheck />
+            </div>
+          )}
+          
+          {!isAlreadyInList && someVariantsSelected && (
+            <div className="selection-indicator partial">
+              <FaCheckSquare />
+            </div>
+          )}
+        </div>
+        
+        <div className="picker-item-info">
+          <h4 className="picker-item-title" title={product.title}>
+            {product.title || 'Untitled Product'}
+          </h4>
+          
+          <div className="variant-info">
+            <span className="variant-count">
+              {product.variants?.length || 0} variant{product.variants?.length !== 1 ? 's' : ''}
+            </span>
+            
+            {selectedVariantsCount > 0 && (
+              <span className="selected-count">
+                ({selectedVariantsCount} selected)
               </span>
             )}
           </div>
-          <button className="close-btn" onClick={onClose}>
-            <FaTimes />
+          
+          <div className="price-range">
+            {getPriceRange()}
+          </div>
+          
+          {isAlreadyInList && (
+            <span className="already-in-list">Already in list</span>
+          )}
+        </div>
+        
+        {!isAlreadyInList && hasMultipleVariants && (
+          <button
+            className="variants-toggle"
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowVariants(!showVariants);
+            }}
+            aria-label={showVariants ? 'Hide variants' : 'Show variants'}
+          >
+            {showVariants ? <FaChevronUp /> : <FaChevronDown />}
           </button>
-        </div>
-
-        <div className="picker-search">
-          <FaSearch className="search-icon" />
-          <input
-            type="text"
-            placeholder="Search products by name..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="search-input"
-          />
-        </div>
-
-        <div ref={containerRef} className="picker-content">
-          {loading && !isLoadingMore ? (
-            <div className="loading">
-              <div className="spinner"></div>
-              <p>Loading products...</p>
-            </div>
-          ) : error ? (
-            <div className="api-error-notice">
-              <FaExclamationTriangle className="error-icon" />
-              <div>
-                <h4>API Connection Issue</h4>
-                <p>Showing demo products. The app will still work with sample data.</p>
-                <small>Error: {error}</small>
-              </div>
-            </div>
-          ) : products.length === 0 ? (
-            <div className="empty-state">
-              <p>No products found</p>
-              {search && <p>Try a different search term</p>}
-            </div>
-          ) : (
-            <div className="products-grid">
-              {products.map((product) => (
-                <ProductPickerItem
-                  key={product.id}
-                  product={product}
-                  isSelected={isProductSelected(product)}
-                  isAlreadyInList={isProductAlreadyInList(product.id)}
-                  onSelect={handleSelectProduct}
-                  onSelectVariant={handleSelectProduct}
-                  getVariantSelected={isProductSelected}
-                />
-              ))}
-            </div>
-          )}
-          
-          {isLoadingMore && (
-            <div className="loading-more">
-              <div className="spinner small"></div>
-              <p>Loading more products...</p>
-            </div>
-          )}
-          
-          {!hasMore && products.length > 0 && (
-            <div className="end-of-results">
-              <p>No more products to load</p>
-            </div>
-          )}
-        </div>
-
-        <div className="picker-footer">
-          <div className="selection-info">
-            <div className="selection-count">
-              {selectedItems.length} item{selectedItems.length !== 1 ? 's' : ''} selected
-            </div>
-            {selectedItems.length > 0 && (
-              <div className="selection-hint">
-                Click confirm to {editingProductId ? 'replace' : 'add'} products
-              </div>
-            )}
-          </div>
-          <div className="footer-actions">
-            <button className="cancel-btn" onClick={onClose}>
-              Cancel
-            </button>
-            <button
-              className="confirm-btn"
-              onClick={handleConfirmSelection}
-              disabled={selectedItems.length === 0}
-            >
-              <FaCheck /> Confirm Selection
-            </button>
-          </div>
-        </div>
+        )}
       </div>
+
+      {/* Variants for multi-variant products */}
+      {showVariants && hasMultipleVariants && !isAlreadyInList && (
+        <div className="variants-selection" onClick={(e) => e.stopPropagation()}>
+          <div className="variants-header">
+            <div className="variants-title">
+              <span>Select variants:</span>
+              <span className="variants-selected-count">
+                {selectedVariantsCount} of {product.variants.length} selected
+              </span>
+            </div>
+            
+            <button
+              className="select-all-btn"
+              onClick={handleSelectAll}
+              aria-label={allVariantsSelected ? 'Deselect all' : 'Select all'}
+            >
+              {allVariantsSelected ? (
+                <>
+                  <FaCheckSquare /> Deselect All
+                </>
+              ) : (
+                <>
+                  <FaSquare /> Select All
+                </>
+              )}
+            </button>
+          </div>
+          
+          <div className="variants-list">
+            {product.variants.map((variant) => {
+              const isVariantSelected = getVariantSelected(product.id, variant.id);
+              const price = parseFloat(variant.price || 0).toFixed(2);
+              
+              return (
+                <div
+                  key={`${product.id}-${variant.id}`}
+                  className={`variant-option ${isVariantSelected ? 'selected' : ''}`}
+                  onClick={() => handleVariantSelect(variant.id)}
+                >
+                  <div className="variant-checkbox">
+                    {isVariantSelected ? <FaCheckSquare /> : <FaSquare />}
+                  </div>
+                  
+                  <div className="variant-details">
+                    <span className="variant-title" title={variant.title}>
+                      {variant.title || 'Default Variant'}
+                    </span>
+                    <span className="variant-price">${price}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Single variant display */}
+      {!showVariants && isSingleVariant && !isAlreadyInList && (
+        <div className="single-variant-info">
+          <div 
+            className={`variant-option ${isSelected ? 'selected' : ''}`}
+            onClick={() => handleVariantSelect(product.variants[0].id)}
+          >
+            <div className="variant-checkbox">
+              {isSelected ? <FaCheckSquare /> : <FaSquare />}
+            </div>
+            
+            <div className="variant-details">
+              <span className="variant-title" title={product.variants[0].title}>
+                {product.variants[0].title || 'Default Variant'}
+              </span>
+              <span className="variant-price">
+                ${parseFloat(product.variants[0]?.price || 0).toFixed(2)}
+              </span>
+            </div>
+            
+            <button
+              className="select-single-btn"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleVariantSelect(product.variants[0].id);
+              }}
+            >
+              {isSelected ? 'Deselect' : 'Select'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* No variants warning */}
+      {noVariants && !isAlreadyInList && (
+        <div className="single-variant-info">
+          <div className="variant-option" style={{ opacity: 0.6 }}>
+            <div className="variant-checkbox">
+              <FaSquare />
+            </div>
+            <div className="variant-details">
+              <span className="variant-title">No variants available</span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
-export default ProductPicker;
+export default ProductPickerItem;

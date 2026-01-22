@@ -45,46 +45,17 @@ const mockProducts = [
   },
   {
     id: 3,
-    title: "Leather Jacket",
+    title: "Smart Watch (Single Variant)",
     variants: [
-      { id: 301, product_id: 3, title: "Small / Black", price: "199.99" },
-      { id: 302, product_id: 3, title: "Medium / Black", price: "199.99" },
-      { id: 303, product_id: 3, title: "Large / Black", price: "199.99" },
-      { id: 304, product_id: 3, title: "Small / Brown", price: "189.99" }
-    ],
-    image: {
-      src: "https://images.unsplash.com/photo-1551028719-00167b16eac5?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
-      alt: "Leather Jacket"
-    }
-  },
-  {
-    id: 4,
-    title: "Smart Watch Series 5",
-    variants: [
-      { id: 401, product_id: 4, title: "44mm / Black", price: "299.99" },
-      { id: 402, product_id: 4, title: "44mm / Silver", price: "299.99" },
-      { id: 403, product_id: 4, title: "40mm / Black", price: "279.99" }
+      { id: 301, product_id: 3, title: "44mm / Black", price: "299.99" }
     ],
     image: {
       src: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
       alt: "Smart Watch"
     }
   },
-  {
-    id: 5,
-    title: "Backpack - Waterproof",
-    variants: [
-      { id: 501, product_id: 5, title: "30L / Gray", price: "89.99" },
-      { id: 502, product_id: 5, title: "30L / Navy", price: "89.99" },
-      { id: 503, product_id: 5, title: "40L / Gray", price: "99.99" }
-    ],
-    image: {
-      src: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
-      alt: "Backpack"
-    }
-  }
+  // ... more products
 ];
-
 // Helper function for mock data fallback
 const getMockProducts = ({ search = '', page = 0, limit = 10 }) => {
   // Simulate network delay

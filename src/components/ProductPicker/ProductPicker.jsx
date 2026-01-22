@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import ProductPickerItem from './ProductPickerItem';
 import useProducts from '../../hooks/useProducts';
 import useDebounce from '../../hooks/useDebounce';
 import { FaSearch, FaTimes, FaCheck, FaExclamationTriangle, FaSync, FaDatabase } from 'react-icons/fa';
@@ -9,8 +10,7 @@ const ProductPicker = ({ isOpen, onClose, onSelect, selectedProducts, editingPro
   const [selectedItems, setSelectedItems] = useState([]);
   const debouncedSearch = useDebounce(search, 500);
   
-  // 'error' variable को remove कर दें या use करें
-  const { products, loading, apiStatus, loadMore, hasMore, refresh } = useProducts({
+  const { products, loading, error, apiStatus, loadMore, hasMore, refresh } = useProducts({
     search: debouncedSearch,
     page: 0,
     limit: 10
@@ -47,19 +47,43 @@ const ProductPicker = ({ isOpen, onClose, onSelect, selectedProducts, editingPro
     }
   }, [handleScroll]);
 
-  const handleSelectProduct = (product) => {
+  const handleSelectProduct = (product, variantId = null) => {
     setSelectedItems(prev => {
-      const exists = prev.some(item => item.id === product.id);
-      if (exists) {
-        return prev.filter(item => item.id !== product.id);
+      const itemKey = variantId ? `${product.id}-${variantId}` : `${product.id}`;
+      const existingIndex = prev.findIndex(item => item.key === itemKey);
+      
+      if (existingIndex >= 0) {
+        return prev.filter((_, index) => index !== existingIndex);
       } else {
-        return [...prev, product];
+        return [...prev, { 
+          product, 
+          variantId,
+          key: itemKey 
+        }];
       }
     });
   };
 
-  const isProductSelected = (productId) => {
-    return selectedItems.some(item => item.id === productId);
+  const getVariantSelected = (productId, variantId) => {
+    return selectedItems.some(item => 
+      item.product.id === productId && item.variantId === variantId
+    );
+  };
+
+  const isProductSelected = (product) => {
+    if (!product.variants || product.variants.length === 0) return false;
+    
+    if (product.variants.length === 1) {
+      return selectedItems.some(item => 
+        item.product.id === product.id && item.variantId === product.variants[0].id
+      );
+    }
+    
+    return product.variants.some(variant =>
+      selectedItems.some(item => 
+        item.product.id === product.id && item.variantId === variant.id
+      )
+    );
   };
 
   const isProductAlreadyInList = (productId) => {
@@ -72,13 +96,29 @@ const ProductPicker = ({ isOpen, onClose, onSelect, selectedProducts, editingPro
   };
 
   const handleConfirmSelection = () => {
-    const newProducts = selectedItems.map(product => ({
-      ...product,
-      variants: product.variants.map(v => ({
-        ...v,
-        discount: { type: 'none', value: 0 }
-      })),
-      showVariants: product.variants.length > 1
+    const productsMap = new Map();
+    
+    selectedItems.forEach(({ product, variantId }) => {
+      if (!productsMap.has(product.id)) {
+        productsMap.set(product.id, {
+          ...product,
+          variants: []
+        });
+      }
+      
+      const productData = productsMap.get(product.id);
+      const variant = product.variants.find(v => v.id === variantId);
+      if (variant) {
+        productData.variants.push({
+          ...variant,
+          discount: { type: 'none', value: 0 }
+        });
+      }
+    });
+    
+    const newProducts = Array.from(productsMap.values()).map(productData => ({
+      ...productData,
+      showVariants: productData.variants.length > 1
     }));
     
     onSelect(newProducts);
@@ -89,13 +129,18 @@ const ProductPicker = ({ isOpen, onClose, onSelect, selectedProducts, editingPro
     refresh();
   };
 
+  const totalSelectedCount = selectedItems.length;
+
   if (!isOpen) return null;
 
   return (
     <div className="picker-overlay">
       <div className="picker-modal">
         <div className="picker-header">
-          <h2>Select Products</h2>
+          <div style={{ flex: 1 }}>
+            <h2>Select Products & Variants</h2>
+          </div>
+          
           <div className="api-status-indicator">
             {apiStatus === 'checking' && (
               <span className="api-status checking">
@@ -113,6 +158,7 @@ const ProductPicker = ({ isOpen, onClose, onSelect, selectedProducts, editingPro
               </span>
             )}
           </div>
+          
           <button className="close-btn" onClick={onClose}>
             <FaTimes />
           </button>
@@ -122,7 +168,7 @@ const ProductPicker = ({ isOpen, onClose, onSelect, selectedProducts, editingPro
           <FaSearch className="search-icon" />
           <input
             type="text"
-            placeholder="Search products (e.g., Hat, Shoes, Watch)..."
+            placeholder="Search products by name..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="search-input"
@@ -146,60 +192,37 @@ const ProductPicker = ({ isOpen, onClose, onSelect, selectedProducts, editingPro
             </div>
           ) : products.length === 0 ? (
             <div className="empty-state">
-              <p>No products found</p>
-              {search && <p>Try searching for: Hat, Shoes, Watch</p>}
-              {!search && <p>Try typing in the search box above</p>}
+              <p>📭 No products found</p>
+              {search ? (
+                <p>No results for "{search}". Try a different search term.</p>
+              ) : (
+                <p>Start typing in the search box to find products.</p>
+              )}
             </div>
           ) : (
-            <div className="products-grid">
-              {products.map((product) => {
-                const isSelected = isProductSelected(product.id);
-                const isAlreadyInList = isProductAlreadyInList(product.id);
-                
-                return (
-                  <div
+            <>
+              <div style={{ 
+                marginBottom: '15px', 
+                color: '#666',
+                fontSize: '0.9rem'
+              }}>
+                Found {products.length} product{products.length !== 1 ? 's' : ''}
+                {search && ` for "${search}"`}
+              </div>
+              
+              <div className="products-grid">
+                {products.map((product) => (
+                  <ProductPickerItem
                     key={product.id}
-                    className={`product-picker-item ${isAlreadyInList ? 'disabled' : ''}`}
-                    onClick={() => !isAlreadyInList && handleSelectProduct(product)}
-                    style={{
-                      opacity: isAlreadyInList ? 0.6 : 1,
-                      cursor: isAlreadyInList ? 'not-allowed' : 'pointer',
-                      borderColor: isSelected ? '#28a745' : '#e0e0e0',
-                      borderWidth: isSelected ? '2px' : '1px'
-                    }}
-                  >
-                    <div className="picker-item-header">
-                      <div className="picker-item-image">
-                        <img src={product.image.src} alt={product.title} />
-                      </div>
-                      
-                      <div className="picker-item-info">
-                        <h4 className="picker-item-title">{product.title}</h4>
-                        <p className="picker-item-variants">
-                          {product.variants.length} variant{product.variants.length !== 1 ? 's' : ''}
-                        </p>
-                        
-                        {isAlreadyInList ? (
-                          <span className="already-in-list">Already in list</span>
-                        ) : isSelected ? (
-                          <span className="selection-indicator">Selected</span>
-                        ) : null}
-                      </div>
-                    </div>
-                    
-                    <div className="product-price">
-                      From ${product.variants[0]?.price || '0.00'}
-                    </div>
-                    
-                    {apiStatus === 'failed' && (
-                      <div className="demo-badge">
-                        <FaDatabase /> Demo Product
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+                    product={product}
+                    isSelected={isProductSelected(product)}
+                    isAlreadyInList={isProductAlreadyInList(product.id)}
+                    onSelect={handleSelectProduct}
+                    getVariantSelected={getVariantSelected}
+                  />
+                ))}
+              </div>
+            </>
           )}
           
           {isLoadingMore && (
@@ -213,7 +236,7 @@ const ProductPicker = ({ isOpen, onClose, onSelect, selectedProducts, editingPro
         <div className="picker-footer">
           <div className="selection-info">
             <div className="selection-count">
-              {selectedItems.length} item{selectedItems.length !== 1 ? 's' : ''} selected
+              {totalSelectedCount} item{totalSelectedCount !== 1 ? 's' : ''} selected
             </div>
             <div className="data-source">
               {apiStatus === 'connected' ? 'Live API Data' : 'Demo Data'}
@@ -226,9 +249,9 @@ const ProductPicker = ({ isOpen, onClose, onSelect, selectedProducts, editingPro
             <button
               className="confirm-btn"
               onClick={handleConfirmSelection}
-              disabled={selectedItems.length === 0}
+              disabled={totalSelectedCount === 0}
             >
-              <FaCheck /> Confirm
+              <FaCheck /> Confirm Selection
             </button>
           </div>
         </div>
